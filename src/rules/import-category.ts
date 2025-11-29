@@ -1,7 +1,7 @@
 import { ESLintUtils } from '@typescript-eslint/utils';
 import type { TSESTree } from '@typescript-eslint/types';
 
-const createRule = ESLintUtils.RuleCreator((name) => `https://github.com/mjhashemian/${name}/README.md`);
+const createRule = ESLintUtils.RuleCreator((name) => `https://github.com/mjhashemian/${name}#README.md`);
 
 type ImportCategory = {
     comment: string;
