@@ -1,0 +1,52 @@
+{
+  "name": "eslint-plugin-import-category",
+  "version": "1.0.0",
+  "description": "ESLint plugin to enforce comment headers and ordering for import groups with full configurability",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "lint": "eslint src --ext .ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "eslint",
+    "eslintplugin",
+    "eslint-plugin",
+    "import",
+    "imports",
+    "ordering",
+    "comments",
+    "typescript",
+    "linting"
+  ],
+  "author": "Seyyed Mohammad Javad Hashemian",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/eslint-plugin-import-category.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/eslint-plugin-import-category/issues"
+  },
+  "homepage": "https://github.com/yourusername/eslint-plugin-import-category#readme",
+  "peerDependencies": {
+    "@typescript-eslint/parser": "^6.0.0 || ^7.0.0 || ^8.0.0",
+    "eslint": "^8.0.0 || ^9.0.0"
+  },
+  "devDependencies": {
+    "@typescript-eslint/parser": "^8.48.0",
+    "@typescript-eslint/utils": "^8.48.0",
+    "eslint": "^9.39.1",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
+}
