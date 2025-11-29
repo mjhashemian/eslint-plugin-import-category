@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-import-category",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "ESLint plugin to enforce comment headers and ordering for import groups with full configurability",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

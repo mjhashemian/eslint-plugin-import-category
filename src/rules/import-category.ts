@@ -1,28 +1,26 @@
 import { ESLintUtils } from '@typescript-eslint/utils';
 import type { TSESTree } from '@typescript-eslint/types';
 
-const createRule = ESLintUtils.RuleCreator((name) => `https://github.com/mjhashemian/${name}#README.md`);
+const createRule = ESLintUtils.RuleCreator(
+    (name) => `https://github.com/mjhashemian/eslint-plugin-import-category#README.md`
+);
 
 type ImportCategory = {
     comment: string;
-    patterns: string[];
+    patterns: RegExp[];
     order: number;
 };
 
 type Options = [
     {
-        categories?: ImportCategory[];
-        typeImportsCategory?: string | null;
-        enforceOrder?: boolean;
-        enforceComments?: boolean;
-        commentStyle?: 'line' | 'block';
+        configs?: ImportCategory[];
     },
 ];
 
 type MessageIds = 'missingComment' | 'duplicateComment' | 'wrongOrder';
 
 const rule = createRule<Options, MessageIds>({
-    name: 'eslint-plugin-import-category',
+    name: 'import-category',
     meta: {
         type: 'layout',
         docs: {
@@ -33,39 +31,9 @@ const rule = createRule<Options, MessageIds>({
             {
                 type: 'object',
                 properties: {
-                    categories: {
+                    configs: {
                         type: 'array',
-                        items: {
-                            type: 'object',
-                            properties: {
-                                comment: { type: 'string' },
-                                patterns: {
-                                    type: 'array',
-                                    items: { type: 'string' },
-                                },
-                                order: { type: 'number' },
-                            },
-                            required: ['comment', 'patterns', 'order'],
-                            additionalProperties: false,
-                        },
                         description: 'Array of import categories with their patterns and order',
-                    },
-                    typeImportsCategory: {
-                        oneOf: [{ type: 'string' }, { type: 'null' }],
-                        description: 'Comment for type-only imports (null to disable)',
-                    },
-                    enforceOrder: {
-                        type: 'boolean',
-                        description: 'Whether to enforce category order',
-                    },
-                    enforceComments: {
-                        type: 'boolean',
-                        description: 'Whether to enforce category comments',
-                    },
-                    commentStyle: {
-                        type: 'string',
-                        enum: ['line', 'block'],
-                        description: 'Style of comments to use',
                     },
                 },
                 additionalProperties: false,
@@ -80,45 +48,18 @@ const rule = createRule<Options, MessageIds>({
     },
     defaultOptions: [
         {
-            categories: [
-                {
-                    comment: '// External Libraries',
-                    patterns: ['^[a-z@]'],
-                    order: 1,
-                },
-                {
-                    comment: '// Internal Modules',
-                    patterns: ['^~/', '^@/'],
-                    order: 2,
-                },
-                {
-                    comment: '// Relative Imports',
-                    patterns: ['^\\.'],
-                    order: 3,
-                },
-            ],
-            typeImportsCategory: '// Types',
-            enforceOrder: true,
-            enforceComments: true,
-            commentStyle: 'line',
+            configs: [],
         },
     ],
     create(context) {
         const options = context.options[0] || {};
-        const {
-            categories = [],
-            typeImportsCategory = '// Types',
-            enforceOrder = true,
-            enforceComments = true,
-            commentStyle = 'line',
-        } = options;
+        const { configs = [] } = options;
+
+        if (configs.length === 0) {
+            return {};
+        }
 
         const sourceCode = context.sourceCode;
-
-        const categoriesWithRegex = categories.map((cat) => ({
-            ...cat,
-            patterns: cat.patterns.map((pattern) => new RegExp(pattern)),
-        }));
 
         const isTypeOnlyImport = (importNode: TSESTree.ImportDeclaration): boolean =>
             /^import\s+type\s+/.test(sourceCode.getText(importNode));
@@ -127,17 +68,17 @@ const rule = createRule<Options, MessageIds>({
             importPath: string,
             isTypeOnly: boolean,
         ): { comment: string; order: number } | null => {
-            if (isTypeOnly && typeImportsCategory) {
-                const typeCategory = categoriesWithRegex.find((cat) => cat.comment === typeImportsCategory);
-                if (typeCategory) {
-                    return { comment: typeCategory.comment, order: typeCategory.order };
-                }
-                return { comment: typeImportsCategory, order: 0 };
-            }
+            for (const category of configs) {
+                const isTypeCategory = category.comment.toLowerCase().includes('type');
 
-            for (const category of categoriesWithRegex) {
-                if (category.patterns.some((pattern) => pattern.test(importPath))) {
+                if (isTypeOnly && isTypeCategory) {
                     return { comment: category.comment, order: category.order };
+                }
+
+                if (!isTypeOnly && !isTypeCategory) {
+                    if (category.patterns.some((pattern) => pattern.test(importPath))) {
+                        return { comment: category.comment, order: category.order };
+                    }
                 }
             }
             return null;
@@ -164,20 +105,7 @@ const rule = createRule<Options, MessageIds>({
             return groups;
         };
 
-        const formatComment = (comment: string): string => {
-            if (commentStyle === 'block') {
-                const text = comment.replace(/^\/\/\s*/, '');
-                return `/* ${text} */`;
-            }
-            if (!comment.startsWith('//')) {
-                return `// ${comment}`;
-            }
-            return comment;
-        };
-
         const checkImportOrder = (imports: TSESTree.ImportDeclaration[]) => {
-            if (!enforceOrder) return;
-
             let expectedOrder = 0;
 
             imports.forEach((importNode) => {
@@ -205,13 +133,11 @@ const rule = createRule<Options, MessageIds>({
         };
 
         const checkCategoryComments = (groups: Map<string, TSESTree.ImportDeclaration[]>) => {
-            if (!enforceComments) return;
-
             const sortedCategories = Array.from(groups.keys()).sort((a, b) => {
-                const catA = categoriesWithRegex.find((cat) => cat.comment === a);
-                const catB = categoriesWithRegex.find((cat) => cat.comment === b);
-                const orderA = catA?.order ?? (a === typeImportsCategory ? 0 : 999);
-                const orderB = catB?.order ?? (b === typeImportsCategory ? 0 : 999);
+                const catA = configs.find((cat) => cat.comment === a);
+                const catB = configs.find((cat) => cat.comment === b);
+                const orderA = catA?.order ?? 999;
+                const orderB = catB?.order ?? 999;
                 return orderA - orderB;
             });
 
@@ -220,41 +146,30 @@ const rule = createRule<Options, MessageIds>({
                 const [firstImport, ...restImports] = categoryImports;
 
                 const commentsBefore = sourceCode.getCommentsBefore(firstImport);
-                const expectedComment = formatComment(category);
-                const categoryText = category
-                    .replace(/^\/\/\s*/, '')
-                    .replace(/^\/\*\s*/, '')
-                    .replace(/\s*\*\/$/, '')
-                    .trim();
+                const categoryText = category.replace(/^\/\/\s*/, '').trim();
 
                 const hasCorrectComment = commentsBefore.some((comment) => {
                     const commentText = comment.value.trim();
-                    return (
-                        commentText === categoryText ||
-                        comment.value.trim() === category.replace(/^\/\/\s*/, '').trim()
-                    );
+                    return commentText === categoryText;
                 });
 
                 if (!hasCorrectComment) {
                     context.report({
                         node: firstImport,
                         messageId: 'missingComment',
-                        data: { category: expectedComment },
-                        fix: (fixer) => fixer.insertTextBefore(firstImport, `${expectedComment}\n`),
+                        data: { category },
+                        fix: (fixer) => fixer.insertTextBefore(firstImport, `${category}\n`),
                     });
                 }
 
                 restImports.forEach((importNode) => {
                     sourceCode.getCommentsBefore(importNode).forEach((comment) => {
                         const commentText = comment.value.trim();
-                        if (
-                            commentText === categoryText ||
-                            comment.value.trim() === category.replace(/^\/\/\s*/, '').trim()
-                        ) {
+                        if (commentText === categoryText) {
                             context.report({
                                 node: importNode,
                                 messageId: 'duplicateComment',
-                                data: { category: expectedComment },
+                                data: { category },
                                 fix: (fixer) => fixer.removeRange([comment.range[0], comment.range[1] + 1]),
                             });
                         }

@@ -1,20 +1,20 @@
-import importCategoryComments from "./rules/import-category";
-import recommended from "./configs/recommended";
+import type { ESLint } from 'eslint';
+import importCommentsRule from './rules/import-category';
+import recommended from './configs/recommended';
 
-const plugin = {
+const plugin: ESLint.Plugin = {
     meta: {
         name: 'eslint-plugin-import-category',
-        version: '1.0.0',
+        version: '1.0.2',
     },
     rules: {
-        'import-category-comments': importCategoryComments,
+        'import-comments': importCommentsRule as any,
     },
     configs: {
-        recommended,
+        recommended: recommended as any,
     },
 };
 
 export default plugin;
 
-// For CommonJS compatibility
 module.exports = plugin;
