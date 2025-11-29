@@ -1,6 +1,6 @@
 # eslint-plugin-import-category
 
-ESLint plugin to enforce consistent variable naming conventions with full configurability.
+ESLint plugin to enforce comment headers and ordering for import groups with full configurability.
 
 ## Installation
 ```bash
@@ -8,22 +8,10 @@ ESLint plugin to enforce consistent variable naming conventions with full config
 ```
 ## Usage
 
-### With ESLint Legacy Config (`.eslintrc.json`)
-```json
-{
-  "parser": "@typescript-eslint/parser",
-  "plugins": ["import-category"],
-  "rules": {
-    "import-category/enforce-import-category-convention": ["error", {
-      "caseType": "camelCase"
-    }]
-  }
-}
-```
 ### With ESLint Flat Config (JavaScript - `eslint.config.js`)
 
-```javascript
-const variableNaming = require('eslint-plugin-import-category');
+```js
+const importCategory = require('eslint-plugin-import-category');
 const tsParser = require('@typescript-eslint/parser');
 
 module.exports = [{
@@ -37,19 +25,17 @@ module.exports = [{
         },
     },
     plugins: {
-        'import-category': variableNaming,
+        'import-category': importCategory,
     },
     rules: {
-        'import-category/enforce-import-category-convention': ['error', {
-            caseType: 'camelCase',
-        }],
+        'import-category/import-category-comments': ['error'],
     },
 }, ];
 ```
 ### With ESLint Flat Config (TypeScript - `eslint.config.ts`)
 
-```typescript
-import variableNaming from 'eslint-plugin-import-category';
+```ts
+import importCategory from 'eslint-plugin-import-category';
 import tsParser from '@typescript-eslint/parser';
 import type {
     Linter
@@ -66,15 +52,10 @@ const config: Linter.FlatConfig[] = [{
         },
     },
     plugins: {
-        'import-category': variableNaming,
+        'import-category': importCategory,
     },
     rules: {
-        'import-category/enforce-import-category-convention': ['error', {
-            caseType: 'camelCase',
-            checkFunctions: false,
-            ignoreDestructuring: false,
-            ignoreImports: false,
-        }],
+        'import-category/import-category-comments': ['error'],
     },
 }, ];
 
@@ -82,35 +63,8 @@ export default config;
 ```
 ### Using Recommended Config
 
-#### Legacy Config (`.eslintrc.json`)
-
-```json
-{
-"parser": "@typescript-eslint/parser",
-"extends": ["plugin:import-category/recommended"]
-}
-```
-#### Flat Config (JavaScript)
-
-```javascript
-const variableNaming = require('eslint-plugin-import-category');
-const tsParser = require('@typescript-eslint/parser');
-
-module.exports = [{
-    files: ['**/*.ts', '**/*.tsx'],
-    languageOptions: {
-        parser: tsParser,
-        parserOptions: {
-            project: './tsconfig.json',
-        },
-    },
-    ...variableNaming.configs.recommended,
-}, ];
-```
-#### Flat Config (TypeScript)
-
-```typescript
-import variableNaming from 'eslint-plugin-import-category';
+```ts
+import importCategory from 'eslint-plugin-import-category';
 import tsParser from '@typescript-eslint/parser';
 
 export default [{
@@ -121,171 +75,193 @@ export default [{
             project: './tsconfig.json',
         },
     },
-    ...variableNaming.configs.recommended,
+    ...importCategory.configs.recommended,
 }, ];
+```
+## Rule Configuration
+
+### Options
+
+- **`categories`** (array): Define your import categories with patterns and order
+  - `comment` (string): The comment text for the category
+  - `patterns` (string[]): RegExp patterns to match imports
+  - `order` (number): Order priority (lower numbers come first)
+
+- **`typeImportsCategory`** (string | null): Comment for type-only imports (default: `'// Types'`, use `null` to disable)
+
+- **`enforceOrder`** (boolean): Whether to enforce category order (default: `true`)
+
+- **`enforceComments`** (boolean): Whether to enforce category comments (default: `true`)
+
+- **`commentStyle`** ('line' | 'block'): Style of comments to use (default: `'line'`)
+
+### Default Configuration
+
+```ts
+{
+    rules: {
+        'import-category/import-category-comments': ['error', {
+            categories: [{
+                comment: '// React & Core Libraries',
+                patterns: ['^react', '^react-dom', '^next'],
+                order: 1,
+            },
+                {
+                    comment: '// External Dependencies',
+                    patterns: ['^@tanstack', '^axios', '^lodash'],
+                    order: 2,
+                },
+                {
+                    comment: '// UI Components',
+                    patterns: ['^@/components', '^~/components'],
+                    order: 3,
+                },
+                {
+                    comment: '// Utilities & Helpers',
+                    patterns: ['^@/utils', '^@/helpers', '^@/lib'],
+                    order: 4,
+                },
+                {
+                    comment: '// Styles',
+                    patterns: ['\\.css$', '\\.scss$', '\\.module\\.css$'],
+                    order: 5,
+                },
+            ],
+            typeImportsCategory: '// Type Definitions',
+            enforceOrder: true,
+            enforceComments: true,
+            commentStyle: 'line',
+        }]
+    }
+}
 ```
 ## Configuration Examples
 
-### Complete example with all options
+### Custom React Project Setup
 
-```typescript
-// eslint.config.ts
-export default [{
-    files: ['**/*.ts', '**/*.tsx'],
-    rules: {
-        'import-category/enforce-import-category-convention': ['error', {
-            // Specify the case type
-            caseType: 'camelCase',
-
-            // Allowed patterns (regex) to ignore
-            allowedPatterns: ['^_.*', '^CONSTANT_.*'],
-
-            // TypeScript types to exclude
-            excludeTypes: ['Promise', 'Observable'],
-
-            // React component creator functions
-            componentCreators: ['lazy', 'memo', 'forwardRef'],
-
-            // CSS-in-JS libraries
-            styledLibraries: ['styled', 'emotion'],
-
-            // Hook pattern (null to disable)
-            hookPattern: '^use[A-Z]',
-
-            // Check function variables
-            checkFunctions: false,
-
-            // Ignore destructured variables
-            ignoreDestructuring: false,
-
-            // Ignore imported variables
-            ignoreImports: true,
-        }],
-    },
-}, ];
-```
-### Example for React projects
-
-```typescript
-// eslint.config.ts
-export default [{
-    files: ['**/*.tsx'],
-    rules: {
-        'import-category/enforce-import-category-convention': ['error', {
-            caseType: 'camelCase',
-            componentCreators: ['lazy', 'memo', 'forwardRef', 'createContext'],
-            styledLibraries: ['styled'],
-            hookPattern: '^use[A-Z]',
-            ignoreImports: true,
-        }],
-    },
-}, ];
-```
-### Example for snake_case convention
-
-```typescript
-// eslint.config.ts
-export default [{
-    files: ['**/*.ts'],
-    rules: {
-        'import-category/enforce-import-category-convention': ['error', {
-            caseType: 'snake_case',
-            componentCreators: [],
-            styledLibraries: [],
-            hookPattern: null,
-            checkFunctions: true,
-        }],
-    },
-}, ];
-```
-
-## Options
-
-### `caseType` (default: `"camelCase"`)
-The naming convention to enforce:
-- `"camelCase"`: `myVariable`
-- `"PascalCase"`: `MyVariable`
-- `"snake_case"`: `my_variable`
-- `"UPPER_SNAKE_CASE"`: `MY_VARIABLE`
-- `"kebab-case"`: `my-variable`
-
-### `allowedPatterns` (default: `[]`)
-Array of regex patterns for variable names to ignore:
-
-
-```json
-{
-  "allowedPatterns": ["^_.*", "^CONSTANT_.*"]
-}
-```
-### `excludeTypes` (default: `[]`)
-TypeScript types to exclude from checking:
-
-```json
-{
-  "excludeTypes": ["Promise", "Observable"]
-}
-```
-
-### `componentCreators`: (default: `["lazy", "styled", "createElement", "memo", "forwardRef", "createContext"]`)
-Functions that create React components (set to `[]` to disable):
-
-```json
-{
-  "componentCreators": ["lazy", "memo"]
-}
-```
-### `styledLibraries` (default: `["styled"]`)
-CSS-in-JS library names (set to `[]` to disable):
-
-```json
-{
-  "styledLibraries": ["styled", "emotion"]
-}
-```
-### `hookPattern` (default: `"^use[A-Z]"`)
-Regex pattern to match hook functions (set to `null` to disable):
-
-```json
-{
-  "hookPattern": "^use[A-Z].*"
-}
-```
-### `checkFunctions` (default: `false`)
-Whether to check function variables:
-
-```json
-{
-  "checkFunctions": true
-}
-```
-### `ignoreDestructuring` (default: `false`)
-Whether to ignore destructured variables:
-
-```json
-{
-  "ignoreDestructuring": true
-}
-```
-### `ignoreImports` (default: `false`)
-Whether to ignore imported variables:
-```json
-{
-  "ignoreImports": true
-}
-```
-## Examples
 ```ts
-// ❌ Bad (with camelCase)
-const MyVariable = 'value';
-const my_variable = 123;
-
-// ✅ Good (with camelCase)
-const myVariable = 'value';
-const anotherVar = 123;
+    rules: {
+        'import-category/import-category-comments': ['error', {
+            categories: [{
+                comment: '// React & Core Libraries',
+                patterns: ['^react', '^react-dom', '^next'],
+                order: 1,
+            },
+                {
+                    comment: '// External Dependencies',
+                    patterns: ['^@tanstack', '^axios', '^lodash'],
+                    order: 2,
+                },
+                {
+                    comment: '// UI Components',
+                    patterns: ['^@/components', '^~/components'],
+                    order: 3,
+                },
+                {
+                    comment: '// Utilities & Helpers',
+                    patterns: ['^@/utils', '^@/helpers', '^@/lib'],
+                    order: 4,
+                },
+                {
+                    comment: '// Styles',
+                    patterns: ['\\.css$', '\\.scss$', '\\.module\\.css$'],
+                    order: 5,
+                },
+            ],
+            typeImportsCategory: '// Type Definitions',
+            enforceOrder: true,
+            enforceComments: true,
+            commentStyle: 'line',
+        }]
+    }
 ```
+### Disable Type Imports Category
+
+```ts
+{
+    rules: {
+        'import-category/import-category-comments': ['error', {
+            typeImportsCategory: null,
+        }]
+    }
+}
+```
+### Use Block Comments
+
+```ts
+{
+    rules: {
+        'import-category/import-category-comments': ['error', {
+            commentStyle: 'block',
+            categories: [{
+                comment: 'External Libraries',
+                patterns: ['^[a-z@]'],
+                order: 1,
+            }, ],
+        }]
+    }
+}
+```
+### Only Enforce Order (No Comments)
+
+```ts
+{
+    rules: {
+        'import-category/import-category-comments': ['error', {
+            enforceComments: false,
+            enforceOrder: true,
+        }]
+    }
+}
+```
+## Example Output
+
+### Before
+
+```ts
+import { useState } from 'react';
+import type { User } from '@/types/user';
+import axios from 'axios';
+import { Button } from '@/components/Button';
+import type { Config } from './config';
+import './styles.css';
+```
+### After (with default config)
+
+```ts
+// Types
+import type { User } from '@/types/user';
+import type { Config } from './config';
+
+// External Libraries
+import { useState } from 'react';
+import axios from 'axios';
+
+// Internal Modules
+import { Button } from '@/components/Button';
+
+// Relative Imports
+import './styles.css';
+```
+## Features
+
+✅ **Fully Configurable**: Define your own categories, patterns, and ordering  
+✅ **Flexible Patterns**: Use RegExp for matching import paths  
+✅ **Type Imports Support**: Separate category for `import type` statements  
+✅ **Comment Style Options**: Support for both line (`//`) and block (`/* */`) comments  
+✅ **Optional Enforcement**: Disable order or comment checks independently  
+✅ **Auto-Fix**: Automatically add missing comments and remove duplicates  
+✅ **TypeScript First**: Built with TypeScript for type safety
 
 ## License
 
 MIT
+
+## Contributing
+
+Contributions are welcome! Please open an issue or submit a pull request.
+
+## Support
+
+If you encounter any issues, please report them at GitHub Issues](https://github.com/mjhashemian/eslint-plugin-import-category/issues).
 

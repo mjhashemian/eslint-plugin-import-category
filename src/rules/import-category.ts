@@ -1,8 +1,7 @@
-// Types
 import { ESLintUtils } from '@typescript-eslint/utils';
 import type { TSESTree } from '@typescript-eslint/types';
 
-const createRule = ESLintUtils.RuleCreator((name) => `https://your-docs-url.com/rules/${name}`);
+const createRule = ESLintUtils.RuleCreator((name) => `https://github.com/mjhashemian/${name}/README.md`);
 
 type ImportCategory = {
     comment: string;
@@ -23,7 +22,7 @@ type Options = [
 type MessageIds = 'missingComment' | 'duplicateComment' | 'wrongOrder';
 
 const rule = createRule<Options, MessageIds>({
-    name: 'import-category-comments',
+    name: 'eslint-plugin-import-category',
     meta: {
         type: 'layout',
         docs: {
@@ -222,11 +221,18 @@ const rule = createRule<Options, MessageIds>({
 
                 const commentsBefore = sourceCode.getCommentsBefore(firstImport);
                 const expectedComment = formatComment(category);
-                const categoryText = category.replace(/^\/\/\s*/, '').replace(/^\/\*\s*/, '').replace(/\s*\*\/$/, '').trim();
+                const categoryText = category
+                    .replace(/^\/\/\s*/, '')
+                    .replace(/^\/\*\s*/, '')
+                    .replace(/\s*\*\/$/, '')
+                    .trim();
 
                 const hasCorrectComment = commentsBefore.some((comment) => {
                     const commentText = comment.value.trim();
-                    return commentText === categoryText || comment.value.trim() === category.replace(/^\/\/\s*/, '').trim();
+                    return (
+                        commentText === categoryText ||
+                        comment.value.trim() === category.replace(/^\/\/\s*/, '').trim()
+                    );
                 });
 
                 if (!hasCorrectComment) {
@@ -241,7 +247,10 @@ const rule = createRule<Options, MessageIds>({
                 restImports.forEach((importNode) => {
                     sourceCode.getCommentsBefore(importNode).forEach((comment) => {
                         const commentText = comment.value.trim();
-                        if (commentText === categoryText || comment.value.trim() === category.replace(/^\/\/\s*/, '').trim()) {
+                        if (
+                            commentText === categoryText ||
+                            comment.value.trim() === category.replace(/^\/\/\s*/, '').trim()
+                        ) {
                             context.report({
                                 node: importNode,
                                 messageId: 'duplicateComment',
